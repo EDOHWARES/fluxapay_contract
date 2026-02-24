@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 use super::merchant_registry::*;
 use soroban_sdk::{testutils::Address as _, testutils::Ledger, Address, Env, String};
 
@@ -23,8 +21,8 @@ fn test_merchant_registration() {
     assert_eq!(merchant.merchant_id, merchant_id);
     assert_eq!(merchant.business_name, business_name);
     assert_eq!(merchant.settlement_currency, settlement_currency);
-    assert_eq!(merchant.verified, false);
-    assert_eq!(merchant.active, true);
+    assert!(!merchant.verified);
+    assert!(merchant.active);
     assert!(merchant.created_at > 0);
 }
 
@@ -56,7 +54,7 @@ fn test_merchant_update() {
 
     assert_eq!(updated_merchant.business_name, new_name);
     assert_eq!(updated_merchant.settlement_currency, new_currency);
-    assert_eq!(updated_merchant.active, false);
+    assert!(!updated_merchant.active);
 }
 
 #[test]
@@ -81,7 +79,7 @@ fn test_merchant_verification() {
     client.verify_merchant(&admin, &merchant_id);
 
     let merchant = client.get_merchant(&merchant_id);
-    assert_eq!(merchant.verified, true);
+    assert!(merchant.verified);
 }
 
 #[test]
