@@ -12,14 +12,12 @@ fn setup_contracts(env: &Env) -> (Address, PaymentProcessorClient<'_>, RefundMan
     let refund_manager = env.register(RefundManager, ());
 
     let refund_client = RefundManagerClient::new(env, &refund_manager);
+    let payment_client = PaymentProcessorClient::new(env, &payment_processor);
     let admin = Address::generate(env);
     refund_client.initialize_refund_manager(&admin);
+    payment_client.initialize_payment_processor(&admin);
 
-    (
-        admin,
-        PaymentProcessorClient::new(env, &payment_processor),
-        refund_client,
-    )
+    (admin, payment_client, refund_client)
 }
 
 #[test]
@@ -49,7 +47,9 @@ fn test_create_dispute() {
 
     // Verify payment
     let transaction_hash = BytesN::<32>::random(&env);
-    payment_client.verify_payment(&payment_id, &transaction_hash, &customer, &amount);
+    let oracle = Address::generate(&env);
+    payment_client.grant_role(&_admin, &Symbol::new(&env, "ORACLE"), &oracle);
+    payment_client.verify_payment(&oracle, &payment_id, &transaction_hash, &customer, &amount);
 
     // Create dispute
     let dispute_reason = String::from_str(&env, "Product not received");
@@ -97,7 +97,9 @@ fn test_review_dispute() {
     );
 
     let transaction_hash = BytesN::<32>::random(&env);
-    payment_client.verify_payment(&payment_id, &transaction_hash, &customer, &amount);
+    let oracle = Address::generate(&env);
+    payment_client.grant_role(&_admin, &Symbol::new(&env, "ORACLE"), &oracle);
+    payment_client.verify_payment(&oracle, &payment_id, &transaction_hash, &customer, &amount);
 
     // Create dispute
     let dispute_reason = String::from_str(&env, "Wrong item received");
@@ -145,7 +147,9 @@ fn test_resolve_dispute_with_refund() {
     );
 
     let transaction_hash = BytesN::<32>::random(&env);
-    payment_client.verify_payment(&payment_id, &transaction_hash, &customer, &amount);
+    let oracle = Address::generate(&env);
+    payment_client.grant_role(&_admin, &Symbol::new(&env, "ORACLE"), &oracle);
+    payment_client.verify_payment(&oracle, &payment_id, &transaction_hash, &customer, &amount);
 
     // Create dispute
     let dispute_reason = String::from_str(&env, "Defective product");
@@ -203,7 +207,9 @@ fn test_reject_dispute() {
     );
 
     let transaction_hash = BytesN::<32>::random(&env);
-    payment_client.verify_payment(&payment_id, &transaction_hash, &customer, &amount);
+    let oracle = Address::generate(&env);
+    payment_client.grant_role(&_admin, &Symbol::new(&env, "ORACLE"), &oracle);
+    payment_client.verify_payment(&oracle, &payment_id, &transaction_hash, &customer, &amount);
 
     // Create dispute
     let dispute_reason = String::from_str(&env, "Unauthorized charge");
@@ -249,7 +255,9 @@ fn test_get_payment_disputes() {
     );
 
     let transaction_hash = BytesN::<32>::random(&env);
-    payment_client.verify_payment(&payment_id, &transaction_hash, &customer, &amount);
+    let oracle = Address::generate(&env);
+    payment_client.grant_role(&_admin, &Symbol::new(&env, "ORACLE"), &oracle);
+    payment_client.verify_payment(&oracle, &payment_id, &transaction_hash, &customer, &amount);
 
     // Create multiple disputes
     let _dispute_id1 = refund_client.create_dispute(

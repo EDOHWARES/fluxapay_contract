@@ -7,9 +7,12 @@ use soroban_sdk::{
     Address, BytesN, Env, String, Symbol,
 };
 
-fn setup_payment_processor(env: &Env) -> PaymentProcessorClient<'_> {
+fn setup_payment_processor(env: &Env) -> (Address, PaymentProcessorClient<'_>) {
     let contract_id = env.register(PaymentProcessor, ());
-    PaymentProcessorClient::new(env, &contract_id)
+    let client = PaymentProcessorClient::new(env, &contract_id);
+    let admin = Address::generate(env);
+    client.initialize_payment_processor(&admin);
+    (admin, client)
 }
 
 fn setup_refund_manager(env: &Env) -> (Address, RefundManagerClient<'_>) {
@@ -24,7 +27,7 @@ fn setup_refund_manager(env: &Env) -> (Address, RefundManagerClient<'_>) {
 fn test_create_payment() {
     let env = Env::default();
     env.mock_all_auths();
-    let client = setup_payment_processor(&env);
+    let (_admin, client) = setup_payment_processor(&env);
 
     let payment_id = String::from_str(&env, "payment_123");
     let merchant_id = Address::generate(&env);
@@ -54,7 +57,7 @@ fn test_create_payment() {
 fn test_verify_payment_success() {
     let env = Env::default();
     env.mock_all_auths();
-    let client = setup_payment_processor(&env);
+    let (admin, client) = setup_payment_processor(&env);
 
     let payment_id = String::from_str(&env, "payment_123");
     let merchant_id = Address::generate(&env);
@@ -72,8 +75,11 @@ fn test_verify_payment_success() {
 
     let payer_address = Address::generate(&env);
     let transaction_hash = BytesN::<32>::random(&env);
+    let oracle = Address::generate(&env);
+    client.grant_role(&admin, &role_oracle(&env), &oracle);
 
-    let status = client.verify_payment(&payment_id, &transaction_hash, &payer_address, &amount);
+    let status =
+        client.verify_payment(&oracle, &payment_id, &transaction_hash, &payer_address, &amount);
 
     assert_eq!(status, PaymentStatus::Confirmed);
     let payment = client.get_payment(&payment_id);
@@ -235,7 +241,7 @@ fn test_create_refund_requires_auth() {
 #[should_panic(expected = "HostError: Error(Auth, InvalidAction)")]
 fn test_create_payment_requires_auth() {
     let env = Env::default();
-    let client = setup_payment_processor(&env);
+    let (_admin, client) = setup_payment_processor(&env);
 
     let payment_id = String::from_str(&env, "payment_123");
     let merchant_id = Address::generate(&env);

@@ -50,6 +50,7 @@ impl AccessControl {
         role: Symbol,
         account: Address,
     ) -> Result<(), AccessControlError> {
+        admin.require_auth();
         if !Self::has_role(env, &role_admin(env), &admin) {
             return Err(AccessControlError::Unauthorized);
         }
@@ -68,6 +69,7 @@ impl AccessControl {
         role: Symbol,
         account: Address,
     ) -> Result<(), AccessControlError> {
+        admin.require_auth();
         if !Self::has_role(env, &role_admin(env), &admin) {
             return Err(AccessControlError::Unauthorized);
         }
@@ -109,6 +111,7 @@ impl AccessControl {
         current_admin: Address,
         new_admin: Address,
     ) -> Result<(), AccessControlError> {
+        current_admin.require_auth();
         if !Self::has_role(env, &role_admin(env), &current_admin) {
             return Err(AccessControlError::Unauthorized);
         }
