@@ -50,8 +50,9 @@ fn test_happy_path_flow() {
     payment_client.create_payment(&payment_id, &merchant, &amount, &Symbol::new(&env, "USDC"), &Address::generate(&env), &expires_at);
     
     let tx_hash = BytesN::<32>::random(&env);
-    // Note: using original verify_payment signature for this branch
-    payment_client.verify_payment(&payment_id, &tx_hash, &customer, &amount);
+    let oracle = Address::generate(&env);
+    payment_client.grant_role(&admin, &Symbol::new(&env, "ORACLE"), &oracle);
+    payment_client.verify_payment(&oracle, &payment_id, &tx_hash, &customer, &amount);
     
     let payment_info = payment_client.get_payment(&payment_id);
     assert_eq!(payment_info.status, PaymentStatus::Confirmed);
@@ -89,7 +90,9 @@ fn test_settlement_path() {
     let amount = 2000i128;
     payment_client.create_payment(&payment_id, &merchant, &amount, &Symbol::new(&env, "USDC"), &Address::generate(&env), &(env.ledger().timestamp() + 3600));
     
-    payment_client.verify_payment(&payment_id, &BytesN::<32>::random(&env), &customer, &amount);
+    let oracle = Address::generate(&env);
+    payment_client.grant_role(&admin, &Symbol::new(&env, "ORACLE"), &oracle);
+    payment_client.verify_payment(&oracle, &payment_id, &BytesN::<32>::random(&env), &customer, &amount);
     
     // Settle payment (Sweep to treasury)
     payment_client.settle_payment(&operator, &payment_id, &treasury);

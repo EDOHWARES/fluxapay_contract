@@ -177,58 +177,7 @@ impl RefundManager {
         // Build refund ID: "refund_" + counter
         // For simplicity and to avoid complex string manipulation in no_std,
         // we use a match statement for common cases
-        let refund_id = match counter {
-            1 => String::from_str(&env, "refund_1"),
-            2 => String::from_str(&env, "refund_2"),
-            3 => String::from_str(&env, "refund_3"),
-            4 => String::from_str(&env, "refund_4"),
-            5 => String::from_str(&env, "refund_5"),
-            6 => String::from_str(&env, "refund_6"),
-            7 => String::from_str(&env, "refund_7"),
-            8 => String::from_str(&env, "refund_8"),
-            9 => String::from_str(&env, "refund_9"),
-            10 => String::from_str(&env, "refund_10"),
-            11 => String::from_str(&env, "refund_11"),
-            12 => String::from_str(&env, "refund_12"),
-            13 => String::from_str(&env, "refund_13"),
-            14 => String::from_str(&env, "refund_14"),
-            15 => String::from_str(&env, "refund_15"),
-            16 => String::from_str(&env, "refund_16"),
-            17 => String::from_str(&env, "refund_17"),
-            18 => String::from_str(&env, "refund_18"),
-            19 => String::from_str(&env, "refund_19"),
-            20 => String::from_str(&env, "refund_20"),
-            _ => {
-                // For numbers > 20, construct manually using bytes
-                let prefix = bytes!(&env, 0x726566756e645f); // "refund_" in ASCII hex
-                let mut result = Bytes::new(&env);
-                result.append(&prefix);
-
-                // Convert number to ASCII digits (collect in reverse, then reverse)
-                let mut temp = Bytes::new(&env);
-                let mut n = counter;
-                loop {
-                    temp.push_back((n % 10) as u8 + 48); // 48 is ASCII '0'
-                    n /= 10;
-                    if n == 0 {
-                        break;
-                    }
-                }
-                // Reverse the digits
-                let len = temp.len();
-                for i in 0..len {
-                    result.push_back(temp.get(len - 1 - i).unwrap());
-                }
-
-                // Convert bytes to string using a fixed-size array
-                // We know refund IDs won't exceed 64 bytes
-                let mut arr = [0u8; 64];
-                for i in 0..result.len().min(64) {
-                    arr[i as usize] = result.get(i).unwrap();
-                }
-                String::from_bytes(&env, &arr[..result.len() as usize])
-            }
-        };
+        let refund_id = format_id(&env, "refund_", counter);
 
         let refund = Refund {
             refund_id: refund_id.clone(),
@@ -504,44 +453,9 @@ impl RefundManager {
     }
 
     fn build_dispute_id(env: &Env, counter: u64) -> String {
-        match counter {
-            1 => String::from_str(env, "dispute_1"),
-            2 => String::from_str(env, "dispute_2"),
-            3 => String::from_str(env, "dispute_3"),
-            4 => String::from_str(env, "dispute_4"),
-            5 => String::from_str(env, "dispute_5"),
-            6 => String::from_str(env, "dispute_6"),
-            7 => String::from_str(env, "dispute_7"),
-            8 => String::from_str(env, "dispute_8"),
-            9 => String::from_str(env, "dispute_9"),
-            10 => String::from_str(env, "dispute_10"),
-            _ => {
-                let prefix = bytes!(env, 0x646973707574655f); // "dispute_" in ASCII hex
-                let mut result = Bytes::new(env);
-                result.append(&prefix);
-
-                let mut temp = Bytes::new(env);
-                let mut n = counter;
-                loop {
-                    temp.push_back((n % 10) as u8 + 48);
-                    n /= 10;
-                    if n == 0 {
-                        break;
-                    }
-                }
-                let len = temp.len();
-                for i in 0..len {
-                    result.push_back(temp.get(len - 1 - i).unwrap());
-                }
-
-                let mut arr = [0u8; 64];
-                for i in 0..result.len().min(64) {
-                    arr[i as usize] = result.get(i).unwrap();
-                }
-                String::from_bytes(env, &arr[..result.len() as usize])
-            }
-        }
+        format_id(env, "dispute_", counter)
     }
+
 
     fn get_dispute_internal(env: &Env, dispute_id: &String) -> Result<Dispute, Error> {
         env.storage()
@@ -763,5 +677,36 @@ pub mod merchant_registry;
 mod merchant_registry_test;
 #[cfg(test)]
 mod integration_test;
+#[cfg(test)]
 mod auth_test;
+#[cfg(test)]
+mod proptests;
 mod test;
+
+pub fn format_id(env: &Env, prefix: &str, n: u64) -> String {
+    let mut result = Bytes::new(env);
+    for byte in prefix.as_bytes() {
+        result.push_back(*byte);
+    }
+
+    let mut temp = Bytes::new(env);
+    let mut num = n;
+    loop {
+        temp.push_back((num % 10) as u8 + 48);
+        num /= 10;
+        if num == 0 {
+            break;
+        }
+    }
+    let len = temp.len();
+    for i in 0..len {
+        result.push_back(temp.get(len - i - 1).unwrap());
+    }
+
+    let mut arr = [0u8; 64];
+    let final_len = result.len().min(64);
+    for i in 0..final_len {
+        arr[i as usize] = result.get(i).unwrap();
+    }
+    String::from_bytes(env, &arr[..final_len as usize])
+}

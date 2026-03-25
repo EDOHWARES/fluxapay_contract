@@ -25,7 +25,7 @@ fn test_create_dispute() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let (_admin, payment_client, refund_client) = setup_contracts(&env);
+    let (admin, payment_client, refund_client) = setup_contracts(&env);
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
 
@@ -48,7 +48,7 @@ fn test_create_dispute() {
     // Verify payment
     let transaction_hash = BytesN::<32>::random(&env);
     let oracle = Address::generate(&env);
-    payment_client.grant_role(&_admin, &Symbol::new(&env, "ORACLE"), &oracle);
+    payment_client.grant_role(&admin, &Symbol::new(&env, "ORACLE"), &oracle);
     payment_client.verify_payment(&oracle, &payment_id, &transaction_hash, &customer, &amount);
 
     // Create dispute
@@ -98,7 +98,7 @@ fn test_review_dispute() {
 
     let transaction_hash = BytesN::<32>::random(&env);
     let oracle = Address::generate(&env);
-    payment_client.grant_role(&_admin, &Symbol::new(&env, "ORACLE"), &oracle);
+    payment_client.grant_role(&admin, &Symbol::new(&env, "ORACLE"), &oracle);
     payment_client.verify_payment(&oracle, &payment_id, &transaction_hash, &customer, &amount);
 
     // Create dispute
@@ -148,7 +148,7 @@ fn test_resolve_dispute_with_refund() {
 
     let transaction_hash = BytesN::<32>::random(&env);
     let oracle = Address::generate(&env);
-    payment_client.grant_role(&_admin, &Symbol::new(&env, "ORACLE"), &oracle);
+    payment_client.grant_role(&admin, &Symbol::new(&env, "ORACLE"), &oracle);
     payment_client.verify_payment(&oracle, &payment_id, &transaction_hash, &customer, &amount);
 
     // Create dispute
@@ -208,7 +208,7 @@ fn test_reject_dispute() {
 
     let transaction_hash = BytesN::<32>::random(&env);
     let oracle = Address::generate(&env);
-    payment_client.grant_role(&_admin, &Symbol::new(&env, "ORACLE"), &oracle);
+    payment_client.grant_role(&admin, &Symbol::new(&env, "ORACLE"), &oracle);
     payment_client.verify_payment(&oracle, &payment_id, &transaction_hash, &customer, &amount);
 
     // Create dispute
@@ -234,7 +234,7 @@ fn test_get_payment_disputes() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let (_, payment_client, refund_client) = setup_contracts(&env);
+    let (admin, payment_client, refund_client) = setup_contracts(&env);
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
 
@@ -256,7 +256,7 @@ fn test_get_payment_disputes() {
 
     let transaction_hash = BytesN::<32>::random(&env);
     let oracle = Address::generate(&env);
-    payment_client.grant_role(&_admin, &Symbol::new(&env, "ORACLE"), &oracle);
+    payment_client.grant_role(&admin, &Symbol::new(&env, "ORACLE"), &oracle);
     payment_client.verify_payment(&oracle, &payment_id, &transaction_hash, &customer, &amount);
 
     // Create multiple disputes
