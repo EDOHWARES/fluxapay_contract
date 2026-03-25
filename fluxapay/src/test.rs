@@ -78,8 +78,13 @@ fn test_verify_payment_success() {
     let oracle = Address::generate(&env);
     client.grant_role(&admin, &role_oracle(&env), &oracle);
 
-    let status =
-        client.verify_payment(&oracle, &payment_id, &transaction_hash, &payer_address, &amount);
+    let status = client.verify_payment(
+        &oracle,
+        &payment_id,
+        &transaction_hash,
+        &payer_address,
+        &amount,
+    );
 
     assert_eq!(status, PaymentStatus::Confirmed);
     let payment = client.get_payment(&payment_id);

@@ -1,14 +1,22 @@
 #![cfg(test)]
 
 use crate::{
-    PaymentProcessor, PaymentProcessorClient, RefundManager, RefundManagerClient, merchant_registry::{MerchantRegistry, MerchantRegistryClient},
+    merchant_registry::{MerchantRegistry, MerchantRegistryClient},
+    PaymentProcessor, PaymentProcessorClient, RefundManager, RefundManagerClient,
 };
 use soroban_sdk::{
     testutils::{Address as _, BytesN as _},
     Address, BytesN, Env, String, Symbol,
 };
 
-fn setup_contracts(env: &Env) -> (Address, PaymentProcessorClient<'_>, RefundManagerClient<'_>, MerchantRegistryClient<'_>) {
+fn setup_contracts(
+    env: &Env,
+) -> (
+    Address,
+    PaymentProcessorClient<'_>,
+    RefundManagerClient<'_>,
+    MerchantRegistryClient<'_>,
+) {
     let payment_processor = env.register(PaymentProcessor, ());
     let refund_manager = env.register(RefundManager, ());
     let merchant_registry = env.register(MerchantRegistry, ());
@@ -16,7 +24,7 @@ fn setup_contracts(env: &Env) -> (Address, PaymentProcessorClient<'_>, RefundMan
     let refund_client = RefundManagerClient::new(env, &refund_manager);
     let payment_client = PaymentProcessorClient::new(env, &payment_processor);
     let merchant_client = MerchantRegistryClient::new(env, &merchant_registry);
-    
+
     let admin = Address::generate(env);
     refund_client.initialize_refund_manager(&admin);
     payment_client.initialize_payment_processor(&admin);
@@ -60,7 +68,13 @@ fn test_verify_payment_without_oracle_signature() {
     let env = Env::default();
     let (_admin, payment_client, _refund_client, _merchant_client) = setup_contracts(&env);
     let oracle = Address::generate(&env);
-    payment_client.verify_payment(&oracle, &String::from_str(&env, "p1"), &BytesN::<32>::random(&env), &Address::generate(&env), &100i128);
+    payment_client.verify_payment(
+        &oracle,
+        &String::from_str(&env, "p1"),
+        &BytesN::<32>::random(&env),
+        &Address::generate(&env),
+        &100i128,
+    );
 }
 
 #[test]
@@ -69,7 +83,13 @@ fn test_create_dispute_without_disputer_signature() {
     let env = Env::default();
     let (_admin, _payment_client, refund_client, _merchant_client) = setup_contracts(&env);
     let customer = Address::generate(&env);
-    refund_client.create_dispute(&String::from_str(&env, "p1"), &100i128, &String::from_str(&env, "r"), &String::from_str(&env, "e"), &customer);
+    refund_client.create_dispute(
+        &String::from_str(&env, "p1"),
+        &100i128,
+        &String::from_str(&env, "r"),
+        &String::from_str(&env, "e"),
+        &customer,
+    );
 }
 
 #[test]
@@ -91,6 +111,10 @@ fn test_verify_merchant_called_by_non_admin() {
     let non_admin = Address::generate(&env);
     let merchant = Address::generate(&env);
     // Setup merchant
-    merchant_client.register_merchant(&merchant, &String::from_str(&env, "M"), &String::from_str(&env, "USD"));
+    merchant_client.register_merchant(
+        &merchant,
+        &String::from_str(&env, "M"),
+        &String::from_str(&env, "USD"),
+    );
     merchant_client.verify_merchant(&non_admin, &merchant);
 }
